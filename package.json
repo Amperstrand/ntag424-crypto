@@ -1,0 +1,33 @@
+{
+  "name": "@ntag424/crypto",
+  "version": "1.0.0",
+  "description": "NTAG424 DNA cryptographic primitives for boltcard authentication",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "ntag424",
+    "boltcard",
+    "nfc",
+    "aes-cmac",
+    "crypto"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@scure/base": "^2.2.0",
+    "aes-js": "^3.1.2"
+  },
+  "devDependencies": {
+    "@types/aes-js": "^3.1.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.6"
+  }
+}
