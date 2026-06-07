@@ -2,7 +2,7 @@
 export { hexToBytes, bytesToHex } from "./hex.js";
 
 // AES-CMAC (RFC 4493)
-export { computeAesCmac } from "./aes-cmac.js";
+export { computeAesCmac, _computeKs, _computeCm, _computeAesCmacForVerification } from "./aes-cmac.js";
 
 // NTAG424 p= decryption
 export { decryptP } from "./decrypt.js";
