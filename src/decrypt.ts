@@ -1,4 +1,4 @@
-import AES from "aes-js";
+import { ecb } from "@noble/ciphers/aes.js";
 import { hexToBytes } from "./hex.js";
 
 const BLOCK_SIZE = 16;
@@ -31,8 +31,13 @@ export function decryptP(pHex: string, k1Keys: Uint8Array[]): DecryptResult {
 
   for (let i = 0; i < k1Keys.length; i++) {
     const k1Bytes = k1Keys[i]!;
-    const aesEcbK1 = new AES.ModeOfOperation.ecb(k1Bytes);
-    const decrypted = aesEcbK1.decrypt(pBytes);
+    // NXP AN12196 §3.4.2.1 specifies AES-128-CBC with IV=0 for PICCENCData decryption.
+    // For a single 16-byte block, AES-CBC(IV=0) is mathematically identical to AES-ECB.
+    // We use ECB because it avoids constructing a zero IV and is the primitive operation.
+    // The Go boltcard reference (crypto.go) uses cipher.NewCBCDecrypter with iv = make([]byte, 16)
+    // — functionally equivalent.
+    const cipher = ecb(k1Bytes, { disablePadding: true });
+    const decrypted = cipher.decrypt(pBytes);
 
     if (decrypted[0] === EXPECTED_PICC_DATA_TAG) {
       const uidBytes = decrypted.slice(1, 8);

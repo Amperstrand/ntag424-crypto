@@ -1,4 +1,4 @@
-import AES from "aes-js";
+import { ecb } from "@noble/ciphers/aes.js";
 import { hexToBytes, bytesToHex, buildVerificationData } from "../src/index.js";
 
 export function virtualTap(uidHex: string, counter: number, k1Hex: string, k2Hex: string): { pHex: string; cHex: string } {
@@ -10,8 +10,8 @@ export function virtualTap(uidHex: string, counter: number, k1Hex: string, k2Hex
   plaintext[8] = counter & 0xff;
   plaintext[9] = (counter >> 8) & 0xff;
   plaintext[10] = (counter >> 16) & 0xff;
-  const aes = new AES.ModeOfOperation.ecb(k1);
-  const encrypted = aes.encrypt(plaintext);
+  const cipher = ecb(k1, { disablePadding: true });
+  const encrypted = cipher.encrypt(plaintext);
   const pHex = bytesToHex(new Uint8Array(encrypted));
   const ctrHex = bytesToHex(
     new Uint8Array([(counter >> 16) & 0xff, (counter >> 8) & 0xff, counter & 0xff])

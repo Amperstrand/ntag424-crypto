@@ -1,7 +1,12 @@
-import AES from "aes-js";
+import { ecb } from "@noble/ciphers/aes.js";
 import { hexToBytes } from "./hex.js";
 
 const BLOCK_SIZE = 16;
+
+/** Single-block AES-ECB encrypt (no padding). */
+function aesEcbEncrypt(key: Uint8Array, block: Uint8Array): Uint8Array {
+  return ecb(key, { disablePadding: true }).encrypt(block);
+}
 
 function _xorArrays(a: Uint8Array, b: Uint8Array): Uint8Array {
   if (a.length !== b.length) {
@@ -46,10 +51,9 @@ export function computeAesCmac(message: Uint8Array, key: Uint8Array): Uint8Array
     );
   }
 
-  const aesEcb = new AES.ModeOfOperation.ecb(key);
   const zeroBlock = new Uint8Array(BLOCK_SIZE);
 
-  const L = aesEcb.encrypt(zeroBlock);
+  const L = aesEcbEncrypt(key, zeroBlock);
 
   const K1 = _generateSubkeyGo(L);
 
@@ -65,9 +69,7 @@ export function computeAesCmac(message: Uint8Array, key: Uint8Array): Uint8Array
     M_last = _xorArrays(padded, K2);
   }
 
-  const T = aesEcb.encrypt(M_last);
-
-  return T;
+  return aesEcbEncrypt(key, M_last);
 }
 
 /** Compute session key Ks from sv2 */
@@ -77,10 +79,9 @@ export function _computeKs(sv2: Uint8Array, cmacKeyBytes: Uint8Array): Uint8Arra
 
 /** Compute Cm from Ks (double subkey derivation) */
 export function _computeCm(ks: Uint8Array): Uint8Array {
-  const aesEcbKs = new AES.ModeOfOperation.ecb(ks);
   const zeroBlock = new Uint8Array(BLOCK_SIZE);
 
-  const Lprime = aesEcbKs.encrypt(zeroBlock);
+  const Lprime = aesEcbEncrypt(ks, zeroBlock);
 
   const K1prime = _generateSubkeyGo(Lprime);
 
@@ -89,9 +90,7 @@ export function _computeCm(ks: Uint8Array): Uint8Array {
   const hashVal = new Uint8Array(hk1);
   hashVal[0]! ^= 0x80;
 
-  const cm = aesEcbKs.encrypt(hashVal);
-
-  return cm;
+  return aesEcbEncrypt(ks, hashVal);
 }
 
 /** Extract bytes at odd indices (1,3,5,...) */

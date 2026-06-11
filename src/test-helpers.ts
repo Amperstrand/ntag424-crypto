@@ -1,4 +1,4 @@
-import AES from "aes-js";
+import { ecb } from "@noble/ciphers/aes.js";
 import { deriveKeysFromHex } from "./keys.js";
 import { hexToBytes, bytesToHex } from "./hex.js";
 import { buildVerificationData } from "./verify.js";
@@ -61,8 +61,8 @@ export class TestCard {
 
     // AES-ECB encrypt with K1
     const k1Bytes = hexToBytes(this.keys.k1);
-    const aesEcb = new AES.ModeOfOperation.ecb(k1Bytes);
-    const encrypted = aesEcb.encrypt(picc);
+    const cipher = ecb(k1Bytes, { disablePadding: true });
+    const encrypted = cipher.encrypt(picc);
     const p = bytesToHex(encrypted);
 
     // Counter bytes in decryptP format: [MSB, mid, LSB]
