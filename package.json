@@ -36,7 +36,6 @@
     "@scure/base": "^2.2.0"
   },
   "devDependencies": {
-    "aes-js": "^3.1.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.6"
   }
