@@ -1,0 +1,12 @@
+export { hexToBytes, bytesToHex } from "./hex.js";
+export { computeAesCmac, _computeKs, _computeCm, _computeAesCmacForVerification } from "./aes-cmac.js";
+export { decryptP } from "./decrypt.js";
+export type { DecryptResult, DecryptSuccess, DecryptFailure } from "./decrypt.js";
+export { verifyCmac, buildVerificationData } from "./verify.js";
+export type { VerificationResult } from "./verify.js";
+export { deriveKeysFromHex } from "./keys.js";
+export type { DerivedKeys } from "./keys.js";
+export { extractUIDAndCounter, validateCmac, decodeAndValidate } from "./helpers.js";
+export type { ExtractResult, ExtractSuccess, ExtractFailure } from "./helpers.js";
+export { cmacScanVersions } from "./scan.js";
+export type { CmacScanResult, CmacScanOptions, CmacScanAttempt } from "./scan.js";
