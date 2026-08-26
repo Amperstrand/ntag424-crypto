@@ -4,7 +4,7 @@ const BLOCK_SIZE = 16;
 /**
  * Construct sv2, compute session key ks, Cm, and CMAC tag ct.
  */
-export function buildVerificationData(uidBytes, ctr, k2Bytes) {
+export function buildVerificationData(uidBytes, ctr, k2Bytes, windowData) {
     const sv2 = new Uint8Array(BLOCK_SIZE);
     sv2.set([0x3c, 0xc3, 0x00, 0x01, 0x00, 0x80]);
     sv2.set(uidBytes, 6);
@@ -12,7 +12,7 @@ export function buildVerificationData(uidBytes, ctr, k2Bytes) {
     sv2[14] = ctr[1];
     sv2[15] = ctr[0];
     const ks = _computeKs(sv2, k2Bytes);
-    const cm = _computeCm(ks);
+    const cm = _computeCm(ks, windowData);
     const ct = new Uint8Array([
         cm[1],
         cm[3],
@@ -29,11 +29,11 @@ export function buildVerificationData(uidBytes, ctr, k2Bytes) {
  * Verify the c= CMAC parameter from an NTAG424 tap.
  * Uses constant-time comparison (XOR accumulation).
  */
-export function verifyCmac(uidBytes, ctr, cHex, k2Bytes) {
+export function verifyCmac(uidBytes, ctr, cHex, k2Bytes, windowData) {
     if (!cHex || cHex.length !== 16) {
         return { cmac_validated: false, cmac_error: 'CMAC validation failed' };
     }
-    const { ct } = buildVerificationData(uidBytes, ctr, k2Bytes);
+    const { ct } = buildVerificationData(uidBytes, ctr, k2Bytes, windowData);
     const providedBytes = hexToBytes(cHex);
     let diff = 0;
     for (let i = 0; i < ct.length; i++) {

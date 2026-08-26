@@ -12,7 +12,11 @@ function _xorArrays(a: Uint8Array, b: Uint8Array): Uint8Array {
   if (a.length !== b.length) {
     throw new Error("_xorArrays: Input arrays must have the same length");
   }
-  return new Uint8Array(a.map((val, i) => val ^ b[i]!));
+  const result = new Uint8Array(a.length);
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i]! ^ b[i]!;
+  }
+  return result;
 }
 
 function _shiftGo(src: Uint8Array): { shifted: Uint8Array; carry: number } {
@@ -78,20 +82,9 @@ export function _computeKs(sv2: Uint8Array, cmacKeyBytes: Uint8Array): Uint8Arra
   return computeAesCmac(sv2, cmacKeyBytes);
 }
 
-/** Compute Cm from Ks (double subkey derivation) */
-export function _computeCm(ks: Uint8Array): Uint8Array {
-  const zeroBlock = new Uint8Array(BLOCK_SIZE);
-
-  const Lprime = aesEcbEncrypt(ks, zeroBlock);
-
-  const K1prime = _generateSubkeyGo(Lprime);
-
-  const hk1 = _generateSubkeyGo(K1prime);
-
-  const hashVal = new Uint8Array(hk1);
-  hashVal[0]! ^= 0x80;
-
-  return aesEcbEncrypt(ks, hashVal);
+/** Compute Cm from Ks, optionally including MAC window data (RFC 4493 AES-CMAC) */
+export function _computeCm(ks: Uint8Array, data?: Uint8Array): Uint8Array {
+  return computeAesCmac(data ?? new Uint8Array(0), ks);
 }
 
 /** Extract bytes at odd indices (1,3,5,...) */

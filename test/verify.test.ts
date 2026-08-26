@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { verifyCmac, buildVerificationData, hexToBytes, deriveKeysFromHex } from "../src/index.js";
+import { verifyCmac, buildVerificationData, hexToBytes, bytesToHex, deriveKeysFromHex } from "../src/index.js";
 import { virtualTap, TEST_UID, TEST_ISSUER_KEY } from "./helpers.js";
 
 describe("verifyCmac", () => {
@@ -76,5 +76,35 @@ describe("buildVerificationData", () => {
     const a = buildVerificationData(uid, ctr, k2);
     const b = buildVerificationData(uid, ctr, k2);
     expect(a.ct).toEqual(b.ct);
+  });
+});
+
+describe("MAC window (windowData)", () => {
+  const uid = hexToBytes("04a39493cc868080");
+  const ctr = hexToBytes("000011");
+  const k2 = hexToBytes("2b7e151628aed2a6abf7158809cf4f3c");
+  const enc = new TextEncoder();
+  const shortWindow = enc.encode("boltcard.example.com/lnurlw?p=AB");
+  const longWindow = enc.encode("boltcard.example.com/lnurlw?p=A1B2C3D4E5F60718&c=");
+
+  it("byte-exact: no window (pinned, matches v1.0.0 production dist)", () => {
+    expect(bytesToHex(buildVerificationData(uid, ctr, k2).ct)).toBe("55378618a2d0ce94");
+  });
+
+  it("byte-exact: short window < 16 bytes", () => {
+    expect(bytesToHex(buildVerificationData(uid, ctr, k2, shortWindow).ct)).toBe("341ee269a983aef5");
+  });
+
+  it("byte-exact: window > 16 bytes exercises multi-block chaining", () => {
+    expect(bytesToHex(buildVerificationData(uid, ctr, k2, longWindow).ct)).toBe("beec854f49523858");
+  });
+
+  it("window changes the tag; omitting it cannot validate a window tap", () => {
+    const withWindow = buildVerificationData(uid, ctr, k2, shortWindow);
+    expect(withWindow.ct).not.toEqual(buildVerificationData(uid, ctr, k2).ct);
+    const cHex = bytesToHex(withWindow.ct);
+    expect(verifyCmac(uid, ctr, cHex, k2, shortWindow).cmac_validated).toBe(true);
+    expect(verifyCmac(uid, ctr, cHex, k2).cmac_validated).toBe(false);
+    expect(verifyCmac(uid, ctr, cHex, k2, longWindow).cmac_validated).toBe(false);
   });
 });
