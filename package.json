@@ -1,6 +1,6 @@
 {
   "name": "@ntag424/crypto",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "NTAG424 DNA cryptographic primitives for boltcard authentication",
   "type": "module",
   "main": "dist/index.js",
@@ -32,7 +32,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@noble/ciphers": "^1.2.0",
+    "@noble/ciphers": "^2.3.0",
     "@scure/base": "^2.2.0"
   },
   "devDependencies": {
