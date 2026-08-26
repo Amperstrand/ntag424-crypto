@@ -1,6 +1,6 @@
 /**
- * RFC 4493 single-block AES-CMAC.
- * Throws if message > 16 bytes (multi-block CBC-MAC not implemented).
+ * RFC 4493 AES-CMAC with full multi-block CBC-MAC chaining (§2.3).
+ * Handles empty messages, partial blocks, and multi-block messages.
  */
 export declare function computeAesCmac(message: Uint8Array, key: Uint8Array): Uint8Array;
 /** Compute session key Ks from sv2 */

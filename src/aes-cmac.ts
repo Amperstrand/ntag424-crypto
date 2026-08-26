@@ -36,40 +36,41 @@ function _generateSubkeyGo(input: Uint8Array): Uint8Array {
 }
 
 /**
- * RFC 4493 single-block AES-CMAC.
- * Throws if message > 16 bytes (multi-block CBC-MAC not implemented).
+ * RFC 4493 AES-CMAC with full multi-block CBC-MAC chaining (§2.3).
+ * Handles empty messages, partial blocks, and multi-block messages.
  */
 export function computeAesCmac(message: Uint8Array, key: Uint8Array): Uint8Array {
   if (!(key instanceof Uint8Array) || key.length !== 16) {
     throw new Error("AES-CMAC requires a 16-byte key (AES-128), per RFC 4493 §2.3");
   }
 
-  if (message.length > BLOCK_SIZE) {
-    throw new Error(
-      `computeAesCmac: message length ${message.length} exceeds single-block limit (${BLOCK_SIZE}). ` +
-      "Multi-block CBC-MAC chaining not implemented. See RFC 4493 §2.4."
-    );
-  }
+  const n = Math.ceil(message.length / BLOCK_SIZE);
+  const complete = message.length > 0 && message.length % BLOCK_SIZE === 0;
 
   const zeroBlock = new Uint8Array(BLOCK_SIZE);
 
   const L = aesEcbEncrypt(key, zeroBlock);
 
   const K1 = _generateSubkeyGo(L);
+  const K2 = _generateSubkeyGo(K1);
 
   let M_last: Uint8Array;
-  if (message.length === BLOCK_SIZE) {
-    M_last = _xorArrays(message, K1);
+  if (complete) {
+    M_last = _xorArrays(message.subarray((n - 1) * BLOCK_SIZE), K1);
   } else {
     const padded = new Uint8Array(BLOCK_SIZE);
-    padded.fill(0);
-    padded.set(message);
-    padded[message.length] = 0x80;
-    const K2 = _generateSubkeyGo(K1);
+    const tail = message.subarray(n === 0 ? 0 : (n - 1) * BLOCK_SIZE);
+    padded.set(tail);
+    padded[tail.length] = 0x80;
     M_last = _xorArrays(padded, K2);
   }
 
-  return aesEcbEncrypt(key, M_last);
+  let c: Uint8Array = new Uint8Array(BLOCK_SIZE);
+  for (let i = 0; i < n - 1; i++) {
+    c = aesEcbEncrypt(key, _xorArrays(c, message.subarray(i * BLOCK_SIZE, (i + 1) * BLOCK_SIZE)));
+  }
+
+  return aesEcbEncrypt(key, _xorArrays(c, M_last));
 }
 
 /** Compute session key Ks from sv2 */
