@@ -47,6 +47,7 @@ interface VectorExpected {
 interface Vector {
   id: string;
   category: "an12196" | "sdm" | "derivation";
+  negative?: boolean;
   input: VectorInput;
   expected: VectorExpected;
   origin: string;
@@ -67,7 +68,8 @@ function byOp(op: string): Vector[] {
 
 describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () => {
   it("has the expected suite size and categories", () => {
-    expect(suite.length).toBe(16);
+    expect(suite.length).toBe(46);
+    expect(suite.filter((v) => v.negative).length).toBe(3);
     const categories = new Set(suite.map((v) => v.category));
     expect([...categories].sort()).toEqual(["an12196", "derivation", "sdm"]);
   });
@@ -143,7 +145,7 @@ describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () 
   describe("derive_keys", () => {
     it("derives the boltcard deterministic key set", () => {
       const vs = byOp("derive_keys");
-      expect(vs.length).toBe(5);
+      expect(vs.length).toBe(26);
       // card_id (CMAC(card_key, 2D003F7B)) is not exposed by
       // deriveKeysFromHex; it is skipped in the 3 vectors that carry it.
       for (const v of vs) {
@@ -168,10 +170,29 @@ describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () 
   describe("sdm_full", () => {
     it("runs the full SDM decrypt + MAC chain", () => {
       const vs = byOp("sdm_full");
-      expect(vs.length).toBe(2);
+      expect(vs.length).toBe(11);
+      let negatives = 0;
       for (const v of vs) {
         const k1 = hexToBytes(v.input.k1!);
         const k2 = hexToBytes(v.input.k2!);
+
+        if (v.negative) {
+          // Reject vectors: the chain must refuse the p/c pair — either
+          // decryptP fails the 0xC7 PICCDataTag gate or the SUN MAC does
+          // not validate.
+          negatives++;
+          const result = decryptP(v.input.p!, [k1]);
+          if (result.success) {
+            const verified = verifyCmac(
+              result.uidBytes,
+              result.ctr,
+              v.input.c!,
+              k2,
+            );
+            expect(verified.cmac_validated, v.id).toBe(false);
+          }
+          continue;
+        }
 
         const result = decryptP(v.input.p!, [k1]);
         expect(result.success, `${v.id} decrypt`).toBe(true);
@@ -201,6 +222,7 @@ describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () 
         );
         expect(verified.cmac_validated, v.id).toBe(true);
       }
+      expect(negatives).toBe(3);
     });
   });
 });
