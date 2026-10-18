@@ -33,6 +33,11 @@ npm test          # vitest run
   vendored copy of the canonical `vectors.json` — the vendored copy is a
   conformance artifact: it must move only in lockstep with
   Amperstrand/ntag424-vectors (drift = CI failure there, issue #1).
+- The consumer-side wiring now exists end-to-end: the worker runs the
+  full 46-vector suite against this package + its keygenerator
+  composition (boltcard-cloudflareworker#68 — `npm run vectors:check`,
+  reference-locked copy + sha256 assert). A change here that would break
+  a vector is visible in the worker's CI, not just this repo's.
 - CI gate (issue #3): test + typecheck + publish dry-run. Package
   graduation (license, security policy, dependency policy, releases) is
   issue #5 — check its state before changing packaging metadata.
