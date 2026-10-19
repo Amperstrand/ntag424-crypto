@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import vectors from "./vectors.json";
 import {
   computeAesCmac,
@@ -67,6 +69,14 @@ function byOp(op: string): Vector[] {
 }
 
 describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () => {
+  it("vendored vectors.json is reference-locked (sha256 vs test/LOCK)", () => {
+    const raw = readFileSync(new URL("./vectors.json", import.meta.url));
+    const digest = createHash("sha256").update(raw).digest("hex");
+    expect(digest).toBe(
+      "522cab963c3f7db1ab9249c0d4e207b43abc0b4061323fd5c55755959a4ff65f",
+    );
+  });
+
   it("has the expected suite size and categories", () => {
     expect(suite.length).toBe(46);
     expect(suite.filter((v) => v.negative).length).toBe(3);
