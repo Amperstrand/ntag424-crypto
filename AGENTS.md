@@ -13,9 +13,13 @@ vendored copies must not drift** (enforced by that repo's CI, issue #1).
 NTAG424 DNA cryptographic primitives for boltcard authentication, pure
 TypeScript with zero native dependencies — extracted from
 boltcard-cloudflareworker so the worker, the browser, Node.js, and the
-test rig all share one implementation of: deterministic key derivation
-(`deriveKeysFromHex`), SDM PICC decrypt + SUN CMAC verify
-(`decodeAndValidate`, `verifyCmac`), and the AES-CMAC core (RFC 4493).
+test rig all share one semantic contract, implemented in parallel:
+deterministic key derivation (`deriveKeysFromHex`), SDM PICC decrypt +
+SUN CMAC verify (`decodeAndValidate`, `verifyCmac`), and the AES-CMAC
+core (RFC 4493). The contract is enforced by the shared vectors, not by
+shared code: the worker's `keygenerator.ts` is a separate implementation
+that must stay in three-way agreement (package + worker + vectors) —
+package-only edits are never sufficient when a vector changes.
 
 Position in the read path: the worker's `GET /?p=..&c=..` handler calls
 this package to turn `p`/`c` into a verdict. The package is deliberately
