@@ -71,7 +71,16 @@ function byOp(op: string): Vector[] {
 describe("shared cross-language vector suite (Amperstrand/ntag424-vectors)", () => {
   it("vendored vectors.json is reference-locked (sha256 vs test/LOCK)", () => {
     const raw = readFileSync(new URL("./vectors.json", import.meta.url));
-    const digest = createHash("sha256").update(raw).digest("hex");
+    // Normalize CRLF → LF before hashing: on Windows checkouts with
+    // core.autocrlf=true Git converts the vendored file's line endings and
+    // the raw-bytes digest mismatches the LOCK. Hashing the normalized
+    // buffer makes the lock checkout-independent (paired with .gitattributes
+    // eol=lf, which keeps the working tree canonical in the first place).
+    const normalized = Buffer.from(
+      raw.toString("utf8").replace(/\r\n/g, "\n"),
+      "utf8",
+    );
+    const digest = createHash("sha256").update(normalized).digest("hex");
     expect(digest).toBe(
       "522cab963c3f7db1ab9249c0d4e207b43abc0b4061323fd5c55755959a4ff65f",
     );

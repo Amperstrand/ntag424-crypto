@@ -1,0 +1,3 @@
+# Vendored vector suites and JSON fixtures are hash-locked (test/LOCK);
+# force LF so every platform hashes identical bytes.
+*.json text eol=lf
